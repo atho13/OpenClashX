@@ -9,8 +9,33 @@ local uci = require "luci.model.uci".cursor()
 local json = require "luci.jsonc"
 local datatype = require "luci.cbi.datatypes"
 
-font_green = [[<b class="oc-txt-good">]]
-font_red = [[<b class="oc-txt-bad">]]
+-- 优化 CBI UI（新版 LuCI 专用）
+local function optimize_cbi_ui()
+	HTTP.write([[
+		<script type="text/javascript">
+			// 修正上移、下移按钮名称
+			document.querySelectorAll("input.btn.cbi-button.cbi-button-up").forEach(function(btn) {
+				btn.value = "]] .. translate("Move up") .. [[";
+			});
+			document.querySelectorAll("input.btn.cbi-button.cbi-button-down").forEach(function(btn) {
+				btn.value = "]] .. translate("Move down") .. [[";
+			});
+			// 删除控件和说明之间的多余换行
+			document.querySelectorAll("div.cbi-value-description").forEach(function(descDiv) {
+				var prev = descDiv.previousSibling;
+				while (prev && prev.nodeType === Node.TEXT_NODE && prev.textContent.trim() === "") {
+					prev = prev.previousSibling;
+				}
+				if (prev && prev.nodeType === Node.ELEMENT_NODE && prev.tagName === "BR") {
+					prev.remove();
+				}
+			});
+		</script>
+	]])
+end
+
+font_green = [[<b style=color:green>]]
+font_red = [[<b style=color:red>]]
 font_off = [[</b>]]
 bold_on = [[<strong>]]
 bold_off = [[</strong>]]
@@ -18,10 +43,8 @@ bold_off = [[</strong>]]
 local op_mode = string.sub(luci.sys.exec('uci get openclash.config.operation_mode 2>/dev/null'),0,-2)
 if not op_mode then op_mode = "redir-host" end
 local lan_ip = fs.lanip()
-m = Map("openclash", translate("Overwrite Settings"))
+m = Map("openclash")
 m.pageaction = false
-m.description = translate("Note: To restore the default configuration, try accessing:").." <a href='javascript:void(0)' onclick='javascript:restore_config(this)'>http://"..lan_ip.."/cgi-bin/luci/admin/services/openclash/restore</a>"..
-"<br/>"..font_green..translate("For More Useful Meta Core Functions Go Wiki")..": "..font_off.."<a href='javascript:void(0)' onclick='javascript:return winOpen(\"https://wiki.metacubex.one/\")'>"..translate("https://wiki.metacubex.one/").."</a>"
 
 s = m:section(TypedSection, "openclash")
 s.anonymous = true
@@ -338,7 +361,7 @@ o.default = 0
 
 o = s:taboption("meta", Flag, "enable_meta_sniffer", font_red..bold_on..translate("Enable Sniffer")..bold_off..font_off)
 o.description = font_red..bold_on..translate("Sniffer Will Prevent Domain Name Proxy and DNS Hijack Failure")..bold_off..font_off
-o.default = 0
+o.default = 1
 
 o = s:taboption("meta", Flag, "enable_meta_sniffer_pure_ip", translate("Forced Sniff Pure IP"))
 o.description = translate("Forced Sniff Pure IP Connections")
@@ -493,7 +516,7 @@ function custom_rules_2.write(self, section, value)
 end
 
 -- [[ Edit Custom DNS ]] --
-ds = m:section(TypedSection, "dns_servers", translate("Add Custom DNS Servers")..translate("(Take Effect After Choose Above)"))
+ds = m:section(TypedSection, "dns_servers", translate("Custom DNS Servers"))
 ds.anonymous = true
 ds.addremove = true
 ds.sortable = true
@@ -562,8 +585,8 @@ s.template = "cbi/tblsection"
 s.rmempty = false
 s.render = function(self, ...)
 	Map.render(self, ...)
-	if type(fs.optimize_cbi_ui) == "function" then
-		fs.optimize_cbi_ui()
+	if type(optimize_cbi_ui) == "function" then
+		optimize_cbi_ui()
 	end
 end
 
@@ -609,5 +632,6 @@ o.write = function()
 end
 
 m:append(Template("openclash/config_editor"))
+m:append(Template("openclash/toolbar_show"))
 
 return m

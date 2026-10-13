@@ -28,6 +28,7 @@ jobs:
       - name: Clone Repository
         uses: actions/checkout@v6
         with:
+          repository: vernesong/OpenClash
           ref: package
 
       - name: Current Version

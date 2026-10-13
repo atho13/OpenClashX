@@ -7,7 +7,7 @@ local UTIL = require "luci.util"
 local fs = require "luci.openclash"
 local uci = require("luci.model.uci").cursor()
 
-m = SimpleForm("openclash")
+m = SimpleForm("openclash",translate(""))
 m.description = translate("")
 m.reset = false
 m.submit = false
@@ -16,9 +16,12 @@ m:section(SimpleSection).template = "openclash/status"
 if fs.uci_get_config("config", "oix_token") and fs.uci_get_config("config", "oix_show_info_page") == "1" then
 	m:append(Template("openclash/oixcloud"))
 end
+--m:append(Template("openclash/myip"))
 m:append(Template("openclash/update"))
+--m:append(Template("openclash/developer"))
 m:append(Template("openclash/config_edit"))
 m:append(Template("openclash/config_upload"))
+--m:append(Template("openclash/guide"))
 
 return m
 
